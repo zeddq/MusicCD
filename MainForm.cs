@@ -21,6 +21,7 @@ namespace MusicCD
         private BurnData m_burnData = new BurnData();
         private string cdda2wavPath;
         private string soxPath;
+        private List<MediaFile> rippedMedia;
 
         public MainForm()
         {
@@ -174,6 +175,14 @@ namespace MusicCD
             rip.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             rip.Start();
             rip.WaitForExit();
+
+            rippedMedia.Clear();
+            DirectoryInfo rippedDirectory = new DirectoryInfo(cdda2wavPath);
+            foreach (FileInfo file in rippedDirectory.GetFiles())
+            {
+                MediaFile media = new MediaFile(file.FullName);
+                rippedMedia.Add(media);
+            }
             
             try
             {
@@ -190,6 +199,29 @@ namespace MusicCD
             //
             // Prepare the wave file streams
             //
+            foreach (MediaFile mediaFile in rippedMedia)
+            {
+                //
+                // Check if we've cancelled
+                //
+                if (backgroundWorker.CancellationPending)
+                {
+                    break;
+                }
+
+                Console.WriteLine(mediaFile.Path);
+                //
+                // Report back to the UI that we're preparing stream
+                //
+                m_burnData.task = BURN_MEDIA_TASK.BURN_MEDIA_TASK_PREPARING;
+                m_burnData.filename = mediaFile.ToString();
+                m_burnData.currentTrackNumber++;
+
+                backgroundWorker.ReportProgress(0, m_burnData);
+
+                mediaFile.PrepareStream();
+            }
+
             foreach (MediaFile mediaFile in listBoxFiles.Items)
             {
                 //
@@ -213,6 +245,7 @@ namespace MusicCD
                 mediaFile.PrepareStream();
             }
 
+
             try
             {
                 trackAtOnce.PrepareMedia();
@@ -234,6 +267,25 @@ namespace MusicCD
             //
             // Add Files and Directories to File System Image
             //
+            foreach (MediaFile mediaFile in rippedMedia)
+            {
+                //
+                // Check if we've cancelled
+                //
+                if (backgroundWorker.CancellationPending)
+                {
+                    e.Result = -1;
+                    break;
+                }
+
+                //
+                // Add audio track
+                //
+                m_burnData.filename = mediaFile.ToString();
+                IStream stream = mediaFile.GetTrackIStream();
+                trackAtOnce.AddAudioTrack(stream);
+            }
+
             foreach (MediaFile mediaFile in listBoxFiles.Items)
             {
                 //
