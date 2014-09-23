@@ -54,7 +54,7 @@
             this.buttonBurn.Name = "buttonBurn";
             this.buttonBurn.Size = new System.Drawing.Size(75, 23);
             this.buttonBurn.TabIndex = 0;
-            this.buttonBurn.Text = "Burn";
+            this.buttonBurn.Text = "Nagraj";
             this.buttonBurn.UseVisualStyleBackColor = true;
             this.buttonBurn.Click += new System.EventHandler(this.buttonBurn_Click);
             // 
@@ -71,7 +71,7 @@
             this.groupBox1.Size = new System.Drawing.Size(374, 172);
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Wave Files";
+            this.groupBox1.Text = "Dodane pliki";
             // 
             // progressBarCapacity
             // 
@@ -104,7 +104,7 @@
             this.buttonRemove.Name = "buttonRemove";
             this.buttonRemove.Size = new System.Drawing.Size(75, 23);
             this.buttonRemove.TabIndex = 2;
-            this.buttonRemove.Text = "Remove";
+            this.buttonRemove.Text = "Usuń";
             this.buttonRemove.UseVisualStyleBackColor = true;
             this.buttonRemove.Click += new System.EventHandler(this.buttonRemove_Click);
             // 
@@ -114,7 +114,7 @@
             this.buttonAdd.Name = "buttonAdd";
             this.buttonAdd.Size = new System.Drawing.Size(75, 23);
             this.buttonAdd.TabIndex = 1;
-            this.buttonAdd.Text = "Add...";
+            this.buttonAdd.Text = "Dodaj...";
             this.buttonAdd.UseVisualStyleBackColor = true;
             this.buttonAdd.Click += new System.EventHandler(this.buttonAdd_Click);
             // 
@@ -161,7 +161,7 @@
             this.groupBox2.Size = new System.Drawing.Size(374, 54);
             this.groupBox2.TabIndex = 3;
             this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "Recording device";
+            this.groupBox2.Text = "Nagrywarka";
             // 
             // labelStatusText
             // 

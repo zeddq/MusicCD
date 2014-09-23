@@ -1,0 +1,13 @@
+C:\Users\zdq\Documents\MusicCD\bin\Debug\MusicCD.exe.config
+C:\Users\zdq\Documents\MusicCD\bin\Debug\MusicCD.exe.manifest
+C:\Users\zdq\Documents\MusicCD\bin\Debug\MusicCD.application
+C:\Users\zdq\Documents\MusicCD\bin\Debug\MusicCD.exe
+C:\Users\zdq\Documents\MusicCD\bin\Debug\MusicCD.pdb
+C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.csprojResolveAssemblyReference.cache
+C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.MainForm.resources
+C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.Properties.Resources.resources
+C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.csproj.GenerateResource.Cache
+C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.exe.manifest
+C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.application
+C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.exe
+C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.pdb

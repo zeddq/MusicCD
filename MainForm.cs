@@ -160,13 +160,6 @@ namespace MusicCD
                     FullErase = true
                 };
 
-            MsftDiscFormat2TrackAtOnce trackAtOnce = new MsftDiscFormat2TrackAtOnce();
-            trackAtOnce.ClientName = m_clientName;
-            trackAtOnce.Recorder = discRecorder2;
-            m_burnData.totalTracks = listBoxFiles.Items.Count;
-            m_burnData.currentTrackNumber = 0;
-
-
             Process rip = new Process();
             rip.StartInfo.WorkingDirectory = cdda2wavPath;
             rip.StartInfo.FileName = "cdda2wav.exe";
@@ -180,10 +173,21 @@ namespace MusicCD
             DirectoryInfo rippedDirectory = new DirectoryInfo(cdda2wavPath);
             foreach (FileInfo file in rippedDirectory.GetFiles())
             {
-                MediaFile media = new MediaFile(file.FullName);
-                rippedMedia.Add(media);
+                if (".wav" == file.Name.Substring(file.Name.Length - 4))
+                {
+                    MediaFile media = new MediaFile(file.FullName);
+                    rippedMedia.Add(media);
+                }
             }
-            
+
+            MsftDiscFormat2TrackAtOnce trackAtOnce = new MsftDiscFormat2TrackAtOnce();
+            trackAtOnce.ClientName = m_clientName;
+            trackAtOnce.Recorder = discRecorder2;
+            m_burnData.totalTracks = listBoxFiles.Items.Count + rippedMedia.Count;
+            m_burnData.currentTrackNumber = 0;
+
+            discFormat.Update += new DiscFormat2Erase_EventHandler(discFormat_Update);
+
             try
             {
                 discFormat.EraseMedia();
@@ -194,8 +198,12 @@ namespace MusicCD
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 backgroundWorker.CancelAsync();
                 e.Result = -1;
+                discFormat.Update -= new DiscFormat2Erase_EventHandler(discFormat_Update);
                 return;
             }
+
+            discFormat.Update -= new DiscFormat2Erase_EventHandler(discFormat_Update);
+
             //
             // Prepare the wave file streams
             //
@@ -316,6 +324,17 @@ namespace MusicCD
             discRecorder2.EjectMedia();
         }
 
+
+        void discFormat_Update(object sender, int elapsedSeconds, int estimatedTotalSeconds)
+        {
+            m_burnData.task = BURN_MEDIA_TASK.BURN_MEDIA_TASK_ERASING;
+            m_burnData.elapsedTime = elapsedSeconds;
+            m_burnData.remainingTime = estimatedTotalSeconds;
+
+            backgroundWorker.ReportProgress(0, m_burnData);
+        }
+
+
         /// <summary>
         /// Update notification from IDiscFormat2TrackAtOnce
         /// </summary>
@@ -371,12 +390,12 @@ namespace MusicCD
         {
             if ((int)e.Result == 0)
             {
-                labelCDProgress.Text = "Finished Burning Disc!";
+                labelCDProgress.Text = "Zakończono nagrywanie!";
             }
             else
             {
                 backUpFiles();
-                labelCDProgress.Text = "Error Burning Disc!";
+                labelCDProgress.Text = "Błąd przy nagrywaniu!";
             }
             labelStatusText.Text = string.Empty;
             statusProgressBar.Value = 0;
@@ -401,7 +420,7 @@ namespace MusicCD
                 //
                 // Notification that we're preparing a stream
                 //
-                labelCDProgress.Text = string.Format("Preparing stream for {0}", burnData.filename);
+                labelCDProgress.Text = string.Format("Przygotowywanie utworu {0}", burnData.filename);
                 progressBarCD.Value = (int)burnData.currentTrackNumber;
                 progressBarCD.Maximum = burnData.totalTracks;
             }
@@ -410,7 +429,7 @@ namespace MusicCD
                 switch (burnData.currentAction)
                 {
                     case IMAPI_FORMAT2_TAO_WRITE_ACTION.IMAPI_FORMAT2_TAO_WRITE_ACTION_PREPARING:
-                        labelCDProgress.Text = string.Format("Writing Track {0} - {1} of {2}",
+                        labelCDProgress.Text = string.Format("Nagrywanie utworu {0} - {1} z {2}",
                             burnData.filename, burnData.currentTrackNumber, burnData.totalTracks);
                         progressBarCD.Value = (int)burnData.currentTrackNumber;
                         progressBarCD.Maximum = burnData.totalTracks;
@@ -422,20 +441,25 @@ namespace MusicCD
                         if (writtenSectors > 0 && burnData.sectorCount > 0)
                         {
                             int percent = (int)((100 * writtenSectors) / burnData.sectorCount);
-                            labelStatusText.Text = string.Format("Progress: {0}%", percent);
+                            labelStatusText.Text = string.Format("Ukończono: {0}%", percent);
                             statusProgressBar.Value = percent;
                         }
                         else
                         {
-                            labelStatusText.Text = "Track Progress 0%";
+                            labelStatusText.Text = "Ukończono 0%";
                             statusProgressBar.Value = 0;
                         }
                         break;
 
                     case IMAPI_FORMAT2_TAO_WRITE_ACTION.IMAPI_FORMAT2_TAO_WRITE_ACTION_FINISHING:
-                        labelStatusText.Text = "Finishing...";
+                        labelStatusText.Text = "Kończenie...";
                         break;
                 }
+            }
+            else if (burnData.task == BURN_MEDIA_TASK.BURN_MEDIA_TASK_ERASING)
+            {
+                int percent = (int)(burnData.elapsedTime * 100 / burnData.remainingTime);
+                labelStatusText.Text = string.Format("Wyczyszczono: {0}%", percent);
             }
         }
 
@@ -491,8 +515,8 @@ namespace MusicCD
             if (mediaFile == null)
                 return;
 
-            if (MessageBox.Show("Are you sure you want to remove \"" + mediaFile + "\"?",
-                "Remove item", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            if (MessageBox.Show("Czy na pewno nie chcesz nagrać \"" + mediaFile + "\"?",
+                "Nie nagrywaj", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 FileInfo file = new FileInfo(mediaFile.Path);
                 file.Delete();
@@ -655,7 +679,8 @@ namespace MusicCD
     public enum BURN_MEDIA_TASK
     {
         BURN_MEDIA_TASK_PREPARING,
-        BURN_MEDIA_TASK_WRITING
+        BURN_MEDIA_TASK_WRITING,
+        BURN_MEDIA_TASK_ERASING
     }
 
     public class BurnData
