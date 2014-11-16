@@ -11,3 +11,16 @@ C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.exe.manifest
 C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.application
 C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.exe
 C:\Users\zdq\Documents\MusicCD\obj\Debug\MusicCD.pdb
+C:\Users\zeddq\Documents\mama\bin\Debug\MusicCD.exe.config
+C:\Users\zeddq\Documents\mama\obj\Debug\MusicCD.exe
+C:\Users\zeddq\Documents\mama\obj\Debug\MusicCD.pdb
+C:\Users\zeddq\Documents\mama\bin\Debug\MusicCD.exe.manifest
+C:\Users\zeddq\Documents\mama\bin\Debug\MusicCD.application
+C:\Users\zeddq\Documents\mama\bin\Debug\MusicCD.exe
+C:\Users\zeddq\Documents\mama\bin\Debug\MusicCD.pdb
+C:\Users\zeddq\Documents\mama\obj\Debug\MusicCD.csprojResolveAssemblyReference.cache
+C:\Users\zeddq\Documents\mama\obj\Debug\MusicCD.MainForm.resources
+C:\Users\zeddq\Documents\mama\obj\Debug\MusicCD.Properties.Resources.resources
+C:\Users\zeddq\Documents\mama\obj\Debug\MusicCD.csproj.GenerateResource.Cache
+C:\Users\zeddq\Documents\mama\obj\Debug\MusicCD.exe.manifest
+C:\Users\zeddq\Documents\mama\obj\Debug\MusicCD.application

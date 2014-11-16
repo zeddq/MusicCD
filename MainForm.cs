@@ -21,7 +21,7 @@ namespace MusicCD
         private BurnData m_burnData = new BurnData();
         private string cdda2wavPath;
         private string soxPath;
-        private List<MediaFile> rippedMedia;
+        private List<MediaFile> rippedMedia = new List<MediaFile>();
 
         public MainForm()
         {
@@ -157,15 +157,15 @@ namespace MusicCD
                 {
                     Recorder = discRecorder2,
                     ClientName = m_clientName,
-                    FullErase = true
+                    FullErase = false
                 };
 
             Process rip = new Process();
             rip.StartInfo.WorkingDirectory = cdda2wavPath;
             rip.StartInfo.FileName = "cdda2wav.exe";
             rip.StartInfo.Arguments = "-D 0,1,0 -B -S 32";
-            rip.StartInfo.CreateNoWindow = true;
-            rip.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            rip.StartInfo.CreateNoWindow = false;
+            rip.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
             rip.Start();
             rip.WaitForExit();
 
@@ -479,7 +479,7 @@ namespace MusicCD
                         Process wma = new Process();
                         wma.StartInfo.WorkingDirectory = soxPath;
                         wma.StartInfo.FileName = "wma2wav.exe";
-                        wma.StartInfo.Arguments = "-f -i \"" + filename + "\"" + " -o " + outputFilename;
+                        wma.StartInfo.Arguments = "-f -i \"" + filename + "\"" + " -o " + "\"" + outputFilename + "\"";
                         wma.StartInfo.CreateNoWindow = true;
                         wma.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                         wma.Start();
@@ -490,7 +490,7 @@ namespace MusicCD
                         Process sox = new Process();
                         sox.StartInfo.WorkingDirectory = soxPath;
                         sox.StartInfo.FileName = "sox.exe";
-                        sox.StartInfo.Arguments = filename + " -e signed-integer -c 2 -r 44100 -b 16 " + outputFilename;
+                        sox.StartInfo.Arguments = "\"" + filename + "\"" + " -e signed-integer -c 2 -r 44100 -b 16 " + "\"" + outputFilename + "\"";
                         sox.StartInfo.CreateNoWindow = true;
                         sox.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                         sox.Start();
