@@ -46,7 +46,10 @@ namespace MusicCD
                 MsftDiscRecorder2 discRecorder2 = new MsftDiscRecorder2();
                 discRecorder2.InitializeDiscRecorder(uniqueRecorderID);
 
-                devicesComboBox.Items.Add(discRecorder2);
+                if ((string)discRecorder2.VolumePathNames.GetValue(0) == "F:\\")
+                {
+                    devicesComboBox.Items.Add(discRecorder2);
+                }
             }
             if (devicesComboBox.Items.Count > 0)
             {
@@ -124,6 +127,14 @@ namespace MusicCD
                 //
                 // We want to burn, so disable many selection controls
                 //
+                if (!checkRadioChecked())
+                {
+                    MessageBox.Show("Mamo, zaznacz czy chcesz nagrać na CD czy CD-RW (na górze)", m_clientName,
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                    return;
+                }
+
                 m_isBurning = true;
                 EnableBurnUI(false);
 
@@ -153,83 +164,43 @@ namespace MusicCD
             BurnData burnData = (BurnData)e.Argument;
             discRecorder2.InitializeDiscRecorder(burnData.uniqueRecorderId);
 
-            MsftDiscFormat2Erase discFormat = new MsftDiscFormat2Erase
-                {
-                    Recorder = discRecorder2,
-                    ClientName = m_clientName,
-                    FullErase = false
-                };
-
-            Process rip = new Process();
-            rip.StartInfo.WorkingDirectory = cdda2wavPath;
-            rip.StartInfo.FileName = "cdda2wav.exe";
-            rip.StartInfo.Arguments = "-D 0,1,0 -B -S 32";
-            rip.StartInfo.CreateNoWindow = false;
-            rip.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
-            rip.Start();
-            rip.WaitForExit();
-
-            rippedMedia.Clear();
-            DirectoryInfo rippedDirectory = new DirectoryInfo(cdda2wavPath);
-            foreach (FileInfo file in rippedDirectory.GetFiles())
-            {
-                if (".wav" == file.Name.Substring(file.Name.Length - 4))
-                {
-                    MediaFile media = new MediaFile(file.FullName);
-                    rippedMedia.Add(media);
-                }
-            }
-
             MsftDiscFormat2TrackAtOnce trackAtOnce = new MsftDiscFormat2TrackAtOnce();
             trackAtOnce.ClientName = m_clientName;
             trackAtOnce.Recorder = discRecorder2;
             m_burnData.totalTracks = listBoxFiles.Items.Count + rippedMedia.Count;
             m_burnData.currentTrackNumber = 0;
 
-            discFormat.Update += new DiscFormat2Erase_EventHandler(discFormat_Update);
+            if (radioButtonRw.Checked)
+            {
+                MsftDiscFormat2Erase discFormat = new MsftDiscFormat2Erase
+                {
+                    Recorder = discRecorder2,
+                    ClientName = m_clientName,
+                    FullErase = false
+                };
 
-            try
-            {
-                discFormat.EraseMedia();
-            }
-            catch (Exception exception)
-            {
-                MessageBox.Show(exception.Message, m_clientName,
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                backgroundWorker.CancelAsync();
-                e.Result = -1;
+                discFormat.Update += new DiscFormat2Erase_EventHandler(discFormat_Update);
+
+                try
+                {
+                    discFormat.EraseMedia();
+                }
+                catch (Exception exception)
+                {
+                    MessageBox.Show(exception.Message, m_clientName,
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    backgroundWorker.CancelAsync();
+                    e.Result = -1;
+                    discFormat.Update -= new DiscFormat2Erase_EventHandler(discFormat_Update);
+                    return;
+                }
+
                 discFormat.Update -= new DiscFormat2Erase_EventHandler(discFormat_Update);
-                return;
             }
-
-            discFormat.Update -= new DiscFormat2Erase_EventHandler(discFormat_Update);
 
             //
             // Prepare the wave file streams
             //
-            foreach (MediaFile mediaFile in rippedMedia)
-            {
-                //
-                // Check if we've cancelled
-                //
-                if (backgroundWorker.CancellationPending)
-                {
-                    break;
-                }
-
-                Console.WriteLine(mediaFile.Path);
-                //
-                // Report back to the UI that we're preparing stream
-                //
-                m_burnData.task = BURN_MEDIA_TASK.BURN_MEDIA_TASK_PREPARING;
-                m_burnData.filename = mediaFile.ToString();
-                m_burnData.currentTrackNumber++;
-
-                backgroundWorker.ReportProgress(0, m_burnData);
-
-                mediaFile.PrepareStream();
-            }
-
             foreach (MediaFile mediaFile in listBoxFiles.Items)
             {
                 //
@@ -253,7 +224,6 @@ namespace MusicCD
                 mediaFile.PrepareStream();
             }
 
-
             try
             {
                 trackAtOnce.PrepareMedia();
@@ -267,6 +237,8 @@ namespace MusicCD
                 return;
             }
 
+            trackAtOnce.DoNotFinalizeMedia = false;
+
             //
             // Add the Update event handler
             //
@@ -275,25 +247,6 @@ namespace MusicCD
             //
             // Add Files and Directories to File System Image
             //
-            foreach (MediaFile mediaFile in rippedMedia)
-            {
-                //
-                // Check if we've cancelled
-                //
-                if (backgroundWorker.CancellationPending)
-                {
-                    e.Result = -1;
-                    break;
-                }
-
-                //
-                // Add audio track
-                //
-                m_burnData.filename = mediaFile.ToString();
-                IStream stream = mediaFile.GetTrackIStream();
-                trackAtOnce.AddAudioTrack(stream);
-            }
-
             foreach (MediaFile mediaFile in listBoxFiles.Items)
             {
                 //
@@ -313,7 +266,6 @@ namespace MusicCD
                 trackAtOnce.AddAudioTrack(stream);
             }
 
-
             //
             // Remove the Update event handler
             //
@@ -324,7 +276,6 @@ namespace MusicCD
             discRecorder2.EjectMedia();
         }
 
-
         void discFormat_Update(object sender, int elapsedSeconds, int estimatedTotalSeconds)
         {
             m_burnData.task = BURN_MEDIA_TASK.BURN_MEDIA_TASK_ERASING;
@@ -333,7 +284,6 @@ namespace MusicCD
 
             backgroundWorker.ReportProgress(0, m_burnData);
         }
-
 
         /// <summary>
         /// Update notification from IDiscFormat2TrackAtOnce
@@ -499,8 +449,16 @@ namespace MusicCD
 
                     Console.WriteLine(soxPath);
                     Console.WriteLine(outputFilename);
-                    MediaFile mediaFile = new MediaFile(outputFilename);
-                    listBoxFiles.Items.Add(mediaFile);
+                    try
+                    { 
+                        MediaFile mediaFile = new MediaFile(outputFilename);
+                        listBoxFiles.Items.Add(mediaFile);
+                    }
+                    catch (Exception exception)
+                    {
+                        MessageBox.Show(exception.Message, m_clientName,
+                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
 
                 UpdateCapacity();
@@ -527,6 +485,32 @@ namespace MusicCD
             }
         }
 
+        private void button_Rip_Click(object sender, EventArgs e)
+        {
+            Process rip = new Process();
+            rip.StartInfo.WorkingDirectory = cdda2wavPath;
+            rip.StartInfo.FileName = "cdda2wav.exe";
+            rip.StartInfo.Arguments = "-D 0,1,0 -B -S 32";
+            rip.StartInfo.CreateNoWindow = false;
+            rip.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
+            rip.Start();
+            rip.WaitForExit();
+
+            rippedMedia.Clear();
+            DirectoryInfo rippedDirectory = new DirectoryInfo(cdda2wavPath);
+            foreach (FileInfo file in rippedDirectory.GetFiles())
+            {
+                if (".wav" == file.Name.Substring(file.Name.Length - 4))
+                {
+                    MediaFile media = new MediaFile(file.FullName);
+                    listBoxFiles.Items.Add(media);
+                }
+            }
+
+            UpdateCapacity();
+            EnableBurnButton();
+        }
+
         /// <summary>
         /// Enable the Burn Button if items in the file listbox
         /// </summary>
@@ -534,7 +518,6 @@ namespace MusicCD
         {
             buttonBurn.Enabled = (listBoxFiles.Items.Count > 0);
         }
-
 
         /// <summary>
         /// Enables/Disables the "Burn" User Interface
@@ -549,6 +532,15 @@ namespace MusicCD
 
             buttonAdd.Enabled = enable;
             buttonRemove.Enabled = enable;
+            button_Rip.Enabled = enable;
+        }
+
+        /// <summary>
+        /// Checks whether CD-RW or CD-R option chosen
+        /// </summary>
+        private bool checkRadioChecked()
+        {
+            return (radioButtonRw.Checked || radioButtonCd.Checked);
         }
 
 
@@ -561,6 +553,7 @@ namespace MusicCD
             // Calculate the size of the files
             //
             Int64 totalMediaSize = 0;
+
             foreach (MediaFile mediaFile in listBoxFiles.Items)
             {
                 totalMediaSize += mediaFile.SizeOnDisc;
@@ -673,7 +666,39 @@ namespace MusicCD
             }
         }
 
+        private void buttonUpArrow_Click(object sender, EventArgs e)
+        {
+            MoveItem(-1);
+        }
 
+
+        private void buttonDownArrow_Click(object sender, EventArgs e)
+        {
+            MoveItem(1);
+        }
+
+        private void MoveItem(int direction)
+        {
+            // Checking selected item
+            if (listBoxFiles.SelectedItem == null || listBoxFiles.SelectedIndex < 0)
+                return; // No selected item - nothing to do
+
+            // Calculate new index using move direction
+            int newIndex = listBoxFiles.SelectedIndex + direction;
+
+            // Checking bounds of the range
+            if (newIndex < 0 || newIndex >= listBoxFiles.Items.Count)
+                return; // Index out of range - nothing to do
+
+            object selected = listBoxFiles.SelectedItem;
+
+            // Removing removable element
+            listBoxFiles.Items.Remove(selected);
+            // Insert it in new position
+            listBoxFiles.Items.Insert(newIndex, selected);
+            // Restore selection
+            listBoxFiles.SetSelected(newIndex, true);
+        }
     }
 
     public enum BURN_MEDIA_TASK
