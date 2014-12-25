@@ -10,6 +10,7 @@ using IMAPI2.Interop;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Diagnostics;
+using System.Threading;
 
 
 namespace MusicCD
@@ -66,6 +67,8 @@ namespace MusicCD
 
             cleanTempFiles();
             AppDomain.CurrentDomain.ProcessExit += (se, ev) => cleanTempFiles();
+
+            EnableBurnButton();
         }
 
         #region Device ComboBox Methods
@@ -487,20 +490,26 @@ namespace MusicCD
 
         private void button_Rip_Click(object sender, EventArgs e)
         {
-            Process rip = new Process();
-            rip.StartInfo.WorkingDirectory = cdda2wavPath;
-            rip.StartInfo.FileName = "cdda2wav.exe";
-            rip.StartInfo.Arguments = "-D 0,1,0 -B -S 32";
-            rip.StartInfo.CreateNoWindow = false;
-            rip.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
-            rip.Start();
-            rip.WaitForExit();
+            EnableBurnUI(false);
 
-            rippedMedia.Clear();
+            new Thread(() =>
+            {
+                Process rip = new Process();
+                rip.StartInfo.WorkingDirectory = cdda2wavPath;
+                rip.StartInfo.FileName = "cdda2wav.exe";
+                rip.StartInfo.Arguments = "-D 0,0,0 -B -S 32";
+                rip.StartInfo.CreateNoWindow = false;
+                rip.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
+                rip.Start();
+                rip.WaitForExit();
+
+                this.Invoke((MethodInvoker)( () => EnableBurnUI(true)) );
+            }).Start();
+
             DirectoryInfo rippedDirectory = new DirectoryInfo(cdda2wavPath);
             foreach (FileInfo file in rippedDirectory.GetFiles())
             {
-                if (".wav" == file.Name.Substring(file.Name.Length - 4))
+                if (file.Name.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
                 {
                     MediaFile media = new MediaFile(file.FullName);
                     listBoxFiles.Items.Add(media);
@@ -525,7 +534,7 @@ namespace MusicCD
         /// <param name="enable"></param>
         void EnableBurnUI(bool enable)
         {
-            buttonBurn.Text = enable ? "&Burn" : "&Cancel";
+            buttonBurn.Text = enable ? "&Nagraj" : "&Anuluj";
 
             devicesComboBox.Enabled = enable;
             listBoxFiles.Enabled = enable;
@@ -628,7 +637,7 @@ namespace MusicCD
             DirectoryInfo soxDirectory = new DirectoryInfo(soxPath);
             foreach (FileInfo file in soxDirectory.GetFiles())
             {
-                if (".wav" == file.Name.Substring(file.Name.Length - 4))
+                if (file.Name.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
                 {
                     file.Delete();
                 }
@@ -637,8 +646,8 @@ namespace MusicCD
             DirectoryInfo cdda2wavDirectory = new DirectoryInfo(cdda2wavPath);
             foreach (FileInfo file in cdda2wavDirectory.GetFiles())
             {
-                if (".wav" == file.Name.Substring(file.Name.Length - 4) ||
-                    ".inf" == file.Name.Substring(file.Name.Length - 4))
+                if (file.Name.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ||
+                    file.Name.EndsWith(".inf", StringComparison.OrdinalIgnoreCase))
                 {
                     file.Delete();
                 }
@@ -659,7 +668,7 @@ namespace MusicCD
             DirectoryInfo cdda2wavDirectory = new DirectoryInfo(cdda2wavPath);
             foreach (FileInfo file in cdda2wavDirectory.GetFiles())
             {
-                if (".wav" == file.Name.Substring(file.Name.Length - 4))
+                if (file.Name.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
                 {
                     file.CopyTo(Path.Combine(newBackupDirectory,file.Name));
                 }
